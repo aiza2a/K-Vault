@@ -896,6 +896,237 @@
       min-height: 100vh;
     }
 
+    /* 清爽版预览工作台：少装饰、浅色底、低饱和青绿强调。 */
+    :root {
+      --bg: #f3faf9;
+      --panel: #ffffff;
+      --text: #102027;
+      --muted: #65777d;
+      --line: #d8e8e6;
+      --brand: #0f8f8a;
+      --brand-dark: #0a6f6b;
+      --danger: #b42318;
+      --code-bg: #102027;
+      --code-text: #e6f4f1;
+      --shadow: 0 18px 42px rgba(15, 74, 78, 0.1);
+      --accent: #7bb8ad;
+    }
+
+    body,
+    body.embed {
+      background:
+        linear-gradient(180deg, #f4fbfa 0%, #edf7f5 100%);
+    }
+
+    .topbar {
+      min-height: 64px;
+      border-bottom-color: rgba(15, 143, 138, 0.16);
+      background: rgba(255, 255, 255, 0.88);
+    }
+
+    .btn {
+      border-radius: 8px;
+      box-shadow: none;
+    }
+
+    .btn.primary {
+      background: var(--brand);
+      border-color: var(--brand);
+    }
+
+    .btn.primary:hover {
+      background: var(--brand-dark);
+      border-color: var(--brand-dark);
+    }
+
+    .file-panel,
+    .viewer,
+    .markdown-page,
+    .data-page,
+    .archive-page,
+    .email-page,
+    .font-page,
+    .summary-page {
+      border-color: rgba(15, 143, 138, 0.16);
+      box-shadow: var(--shadow);
+    }
+
+    .viewer,
+    body.embed .viewer,
+    .viewer.media {
+      background: #fbfffe;
+    }
+
+    .viewer.media::before {
+      background-image:
+        linear-gradient(rgba(15, 143, 138, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15, 143, 138, 0.045) 1px, transparent 1px);
+      opacity: 0.42;
+    }
+
+    .preview-image {
+      background:
+        linear-gradient(45deg, rgba(15, 143, 138, 0.04) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(15, 143, 138, 0.04) 25%, transparent 25%),
+        #f7fbfa;
+      background-size: 22px 22px;
+      background-position: 0 0, 0 11px;
+    }
+
+    .media-frame .preview-video {
+      background: #071111;
+      box-shadow: 0 18px 46px rgba(15, 74, 78, 0.16);
+    }
+
+    .audio-console {
+      color: var(--text);
+      border: 1px solid rgba(15, 143, 138, 0.18);
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(234, 248, 245, 0.94)),
+        #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .audio-title span,
+    .summary-meta,
+    .archive-meta {
+      color: var(--muted);
+    }
+
+    .audio-mark,
+    .summary-icon {
+      background: linear-gradient(135deg, #e7fbf7, #c8f0e8);
+      color: var(--brand-dark);
+    }
+
+    .audio-wave span {
+      background: linear-gradient(180deg, #7bb8ad, #1aa59f 60%, #7ed7cc);
+    }
+
+    .doc-view,
+    .markdown-view,
+    .data-view,
+    .archive-view,
+    .email-view,
+    .font-view,
+    .summary-view {
+      background: #edf7f5;
+    }
+
+    .email-view,
+    .enhanced-view {
+      width: 100%;
+      height: calc(100vh - 220px);
+      min-height: 520px;
+      overflow: auto;
+      align-self: stretch;
+      background: #edf7f5;
+      padding: 26px;
+    }
+
+    .email-page {
+      max-width: 980px;
+      min-height: 100%;
+      margin: 0 auto;
+      padding: 34px;
+      border: 1px solid rgba(15, 143, 138, 0.16);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    .email-header {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr);
+      gap: 10px 14px;
+      margin: 18px 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fdfc;
+    }
+
+    .email-header strong {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .email-body {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      line-height: 1.72;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .email-attachments {
+      display: grid;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .email-attachment {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fdfc;
+    }
+
+    .enhanced-view {
+      padding: 0;
+      background: #fbfffe;
+    }
+
+    .enhanced-shell {
+      width: 100%;
+      height: 100%;
+      min-height: inherit;
+      background: #fbfffe;
+    }
+
+    .enhanced-shell flyfish-file-viewer {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: inherit;
+    }
+
+    .deferred-gate {
+      border: 1px solid rgba(15, 143, 138, 0.2);
+      color: var(--text);
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(229, 247, 244, 0.88));
+      box-shadow: var(--shadow);
+    }
+
+    .deferred-gate::before {
+      background-image:
+        linear-gradient(rgba(15, 143, 138, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15, 143, 138, 0.05) 1px, transparent 1px);
+    }
+
+    .deferred-gate span {
+      color: var(--muted);
+    }
+
+    .deferred-gate .gate-icon {
+      background: #e5f7f4;
+      color: var(--brand-dark);
+    }
+
+    body.embed .enhanced-view,
+    body.embed .email-view {
+      height: 100vh;
+      min-height: 100vh;
+    }
+
     @media (max-width: 720px) {
       .topbar {
         align-items: stretch;
@@ -953,6 +1184,7 @@
       .markdown-view,
       .data-view,
       .archive-view,
+      .email-view,
       .font-view,
       .summary-view {
         padding: 10px;
@@ -961,6 +1193,7 @@
       .markdown-page,
       .data-page,
       .archive-page,
+      .email-page,
       .font-page,
       .summary-page {
         padding: 18px;
@@ -1043,26 +1276,44 @@
       const MARKDOWN_EXTS = new Set(["md", "markdown", "mdown"]);
       const JSON_EXTS = new Set(["json", "jsonc", "json5", "ipynb"]);
       const TABLE_EXTS = new Set(["csv", "tsv"]);
-      const ARCHIVE_EXTS = new Set(["zip", "jar", "rar", "7z", "tar", "tgz", "gz", "gzip", "bz2", "xz"]);
+      const ARCHIVE_EXTS = new Set(["zip", "zipx", "jar", "war", "ear", "apk", "cbz", "cbr", "rar", "7z", "tar", "tgz", "gz", "gzip", "bz2", "bzip2", "tbz", "tbz2", "xz", "txz", "lzma", "zst", "tzst", "cab", "ar", "cpio", "iso", "xar", "lha", "lzh"]);
+      const LOCAL_ARCHIVE_EXTS = new Set(["zip", "jar", "tar", "tgz", "gz", "gzip"]);
       const FONT_EXTS = new Set(["ttf", "otf", "woff", "woff2"]);
+      const EMAIL_EXTS = new Set(["eml", "msg", "mbox"]);
+      const DRAWING_EXTS = new Set(["drawio", "dio", "excalidraw", "mermaid", "mmd", "plantuml", "puml"]);
+      const GEO_EXTS = new Set(["geojson", "kml", "gpx", "shp"]);
+      const MODEL_EXTS = new Set(["glb", "gltf", "obj", "stl", "ply", "fbx", "dae", "3ds", "3mf", "amf", "usd", "usda", "usdc", "usdz", "kmz", "pcd", "wrl", "vrml", "xyz", "vtk", "vtp", "step", "stp", "iges", "igs", "ifc", "3dm"]);
+      const CAD_EXTS = new Set(["dwg", "dxf", "dwf", "dwfx", "xps"]);
+      const EBOOK_EXTS = new Set(["epub", "umd"]);
+      const MINDMAP_EXTS = new Set(["xmind"]);
+      const TYPESET_EXTS = new Set(["ofd", "typ", "typst"]);
+      const EDA_EXTS = new Set(["olb", "dra", "gds", "oas", "oasis"]);
+      const DATA_ASSET_EXTS = new Set(["psd", "ai", "eps", "sqlite", "sqlite3", "db", "parquet", "avro", "wasm", "webarchive"]);
       const SUMMARY_EXTS = new Set([
-        "psd", "ai", "eps", "sqlite", "sqlite3", "db", "parquet", "avro", "wasm", "webarchive",
-        "dwg", "dxf", "dwf", "dwfx", "xps", "ofd", "typ", "typst", "xmind", "drawio", "dio",
-        "epub", "umd", "geojson", "kml", "gpx", "shp", "glb", "gltf", "obj", "stl", "ply",
-        "fbx", "dae", "3ds", "3mf", "usd", "usdz", "kmz", "step", "stp", "iges", "igs", "ifc"
+        ...DATA_ASSET_EXTS, ...CAD_EXTS, ...TYPESET_EXTS, ...MINDMAP_EXTS, ...DRAWING_EXTS,
+        ...EBOOK_EXTS, ...GEO_EXTS, ...MODEL_EXTS, ...EDA_EXTS
       ]);
       const TEXT_EXTS = new Set([
         "txt", "xml", "html", "htm", "css", "js", "mjs", "ts", "tsx", "jsx", "vue",
         "py", "java", "c", "cpp", "h", "hpp", "go", "rs", "sh", "bat", "ps1", "sql",
-        "yaml", "yml", "toml", "ini", "conf", "cfg", "log", "patch", "diff", "proto",
-        "hcl", "tex", "graphql", "http", "rb", "swift", "kt", "kts", "php", "cs"
+        "yaml", "yml", "toml", "ini", "conf", "cfg", "log", "patch", "diff", "bundle", "bdl",
+        "proto", "hcl", "tex", "gv", "graphql", "http", "rb", "swift", "kt", "kts", "php", "cs",
+        "cjs", "bash", "cc"
       ]);
       const OFFICE_KIND_BY_EXT = {
         docx: "docx", docm: "docx", dotx: "docx", dotm: "docx",
         xlsx: "xlsx", xlsm: "xlsx", xltx: "xlsx", xltm: "xlsx",
         pptx: "pptx", pptm: "pptx", ppsx: "pptx", ppsm: "pptx", potx: "pptx", potm: "pptx"
       };
+      const OFFICE_COMPAT_EXTS = new Set(["doc", "dot", "rtf", "odt", "xls", "xlsb", "xlt", "xltm", "ods", "fods", "numbers", "ppt", "odp"]);
       const OPEN_XML_EXTS = new Set(Object.keys(OFFICE_KIND_BY_EXT));
+      const ENHANCED_VIEWER_EXTS = new Set([
+        ...OPEN_XML_EXTS, ...OFFICE_COMPAT_EXTS, "pdf", ...TYPESET_EXTS, ...ARCHIVE_EXTS, ...EMAIL_EXTS,
+        ...CAD_EXTS, ...MODEL_EXTS, ...GEO_EXTS, ...MINDMAP_EXTS, ...DRAWING_EXTS, ...EBOOK_EXTS,
+        ...DATA_ASSET_EXTS, ...EDA_EXTS, "m3u8", "midi", "mid", "heic", "heif", "jxl"
+      ]);
+      const FILE_VIEWER_CDN = "https://cdn.jsdelivr.net/npm/@file-viewer/web-full@latest/dist/flyfish-file-viewer-web-full.iife.js";
+      let enhancedViewerPromise = null;
 
       const params = new URLSearchParams(window.location.search);
       const state = {
@@ -1081,6 +1332,7 @@
         fileName: document.getElementById("fileName"),
         fileType: document.getElementById("fileType"),
         fileSize: document.getElementById("fileSize"),
+        storageHint: document.getElementById("storageHint"),
         subtitle: document.getElementById("subtitle"),
         copyBtn: document.getElementById("copyBtn"),
         openBtn: document.getElementById("openBtn"),
@@ -1254,6 +1506,8 @@
         if (type.startsWith("audio/") || AUDIO_EXTS.has(ext)) return "audio";
         if (type === "application/pdf" || ext === "pdf") return "pdf";
         if (OPEN_XML_EXTS.has(ext)) return OFFICE_KIND_BY_EXT[ext];
+        if (OFFICE_COMPAT_EXTS.has(ext)) return "office";
+        if (EMAIL_EXTS.has(ext)) return "email";
         if (MARKDOWN_EXTS.has(ext)) return "markdown";
         if (JSON_EXTS.has(ext)) return "json";
         if (TABLE_EXTS.has(ext)) return "table";
@@ -1269,6 +1523,9 @@
         els.fileName.textContent = state.fileName;
         els.fileType.textContent = displayTypeName(state.kind, state.extension);
         els.subtitle.textContent = state.fileUrl;
+        if (els.storageHint) {
+          els.storageHint.textContent = shouldUseEnhancedViewer() ? "增强预览" : "本地预览";
+        }
         if (state.fileSize > 0) {
           els.fileSize.hidden = false;
           els.fileSize.textContent = formatSize(state.fileSize);
@@ -1285,6 +1542,8 @@
           docx: "Word 文档",
           xlsx: "Excel 表格",
           pptx: "演示文稿",
+          office: "Office 文档",
+          email: "邮件",
           markdown: "Markdown 文档",
           json: "JSON 数据",
           table: "表格数据",
@@ -1343,6 +1602,16 @@
       async function renderPreview() {
         setViewerClass();
 
+        if (shouldUseEnhancedViewer()) {
+          try {
+            await renderEnhancedFileViewer();
+            return;
+          } catch (error) {
+            console.warn("Enhanced viewer fallback:", error);
+            setViewerClass();
+          }
+        }
+
         if (state.kind === "image") {
           renderImage();
         } else if (state.kind === "video") {
@@ -1361,6 +1630,10 @@
           await renderArchive();
         } else if (state.kind === "font") {
           await renderFont();
+        } else if (state.kind === "email") {
+          await renderEmail();
+        } else if (state.kind === "office") {
+          renderCapabilitySummary();
         } else if (state.kind === "summary") {
           renderCapabilitySummary();
         } else if (state.kind === "text") {
@@ -1370,6 +1643,66 @@
         } else {
           showStatus("此格式暂不支持在线预览", "可以直接下载后用本地应用打开。");
         }
+      }
+
+      function shouldUseEnhancedViewer() {
+        if (!ENHANCED_VIEWER_EXTS.has(state.extension)) return false;
+        if (params.get("engine") === "local") return false;
+        if (/^data:/i.test(state.fileUrl)) return false;
+        return true;
+      }
+
+      async function renderEnhancedFileViewer() {
+        showStatus("正在启动增强预览", "命中重型业务附件，将按需加载专用浏览器端渲染器。");
+        await loadEnhancedViewerEngine();
+
+        clearViewer();
+        els.viewer.className = "viewer enhanced";
+        els.viewer.dataset.kind = state.kind;
+        if (els.storageHint) els.storageHint.textContent = "增强预览";
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "enhanced-view";
+        const shell = document.createElement("div");
+        shell.className = "enhanced-shell";
+        const viewer = document.createElement("flyfish-file-viewer");
+        viewer.setAttribute("src", state.fileUrl);
+        viewer.setAttribute("theme", "light");
+        viewer.setAttribute("toolbar-position", "bottom-right");
+        viewer.setAttribute("filename", state.fileName);
+        viewer.style.display = "block";
+        viewer.style.width = "100%";
+        viewer.style.height = "100%";
+        viewer.style.minHeight = "inherit";
+        shell.appendChild(viewer);
+        wrapper.appendChild(shell);
+        els.viewer.appendChild(wrapper);
+      }
+
+      async function loadEnhancedViewerEngine() {
+        if (customElements.get("flyfish-file-viewer")) return;
+        if (!enhancedViewerPromise) {
+          enhancedViewerPromise = new Promise((resolve, reject) => {
+            const existing = document.querySelector("script[data-file-viewer-engine]");
+            if (existing) {
+              existing.addEventListener("load", resolve, { once: true });
+              existing.addEventListener("error", () => reject(new Error("增强预览脚本加载失败。")), { once: true });
+              return;
+            }
+
+            const script = document.createElement("script");
+            script.src = params.get("engineCdn") || FILE_VIEWER_CDN;
+            script.async = true;
+            script.dataset.fileViewerEngine = "1";
+            script.onload = resolve;
+            script.onerror = () => reject(new Error("增强预览脚本加载失败。"));
+            document.head.appendChild(script);
+          }).then(() => customElements.whenDefined("flyfish-file-viewer"));
+        }
+        await Promise.race([
+          enhancedViewerPromise,
+          new Promise((_, reject) => window.setTimeout(() => reject(new Error("增强预览启动超时。")), 12000))
+        ]);
       }
 
       function setViewerClass() {
@@ -1758,6 +2091,15 @@
 
       async function renderArchive() {
         const ext = state.extension;
+        if (!LOCAL_ARCHIVE_EXTS.has(ext)) {
+          renderCapabilitySummary({
+            title: "压缩包已识别",
+            detail: "此压缩格式已进入增强预览候选。增强引擎不可用时，K-Vault 不会在本地回退模式整包下载解析，避免大文件阻塞浏览器。",
+            category: "归档容器",
+            notes: [["策略", "ZIP/JAR/TAR/TAR.GZ 可本地读取目录。"], ["建议", "RAR、7Z、XZ、ZST 等格式使用增强预览或下载到本地工具打开。"]]
+          });
+          return;
+        }
         showStatus("正在读取压缩包目录", "仅在需要时解析目录，避免一次性展开大文件。");
         const response = await fetch(state.fileUrl, { credentials: "include" });
         if (!response.ok) throw new Error(`压缩包读取失败：HTTP ${response.status}`);
@@ -1995,11 +2337,203 @@
         els.viewer.appendChild(wrapper);
       }
 
+      async function renderEmail() {
+        if (state.extension === "msg") {
+          renderCapabilitySummary({
+            title: "Outlook 邮件已识别",
+            detail: "MSG 属于复合二进制邮件容器。增强预览可用时会交给 File Viewer 邮件渲染器；本地回退模式提供安全摘要，避免误读私有二进制内容。",
+            category: "邮件归档"
+          });
+          return;
+        }
+
+        showStatus("正在解析邮件", "会在浏览器本地提取头信息、正文和附件清单。");
+        const text = await fetchText("邮件");
+        const mailText = state.extension === "mbox" ? firstMboxMessage(text) : text;
+        const parsed = parseEmailMessage(mailText);
+        clearViewer();
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "email-view";
+        const page = document.createElement("article");
+        page.className = "email-page";
+        appendPageHeading(page, parsed.subject || "邮件预览", "只读展示邮件头信息、正文和附件名称，不执行邮件中的脚本。");
+
+        const header = document.createElement("div");
+        header.className = "email-header";
+        appendEmailField(header, "发件人", parsed.from || "未知");
+        appendEmailField(header, "收件人", parsed.to || "未知");
+        appendEmailField(header, "时间", parsed.date || "未知");
+        appendEmailField(header, "主题", parsed.subject || "无主题");
+        page.appendChild(header);
+
+        const body = document.createElement("div");
+        body.className = "email-body";
+        body.textContent = parsed.body || "没有提取到可读正文。";
+        page.appendChild(body);
+
+        if (parsed.attachments.length) {
+          const list = document.createElement("div");
+          list.className = "email-attachments";
+          const heading = document.createElement("h3");
+          heading.textContent = `附件清单（${parsed.attachments.length}）`;
+          list.appendChild(heading);
+          for (const attachment of parsed.attachments) {
+            const row = document.createElement("div");
+            row.className = "email-attachment";
+            const name = document.createElement("span");
+            name.textContent = attachment.name || "未命名附件";
+            const meta = document.createElement("small");
+            meta.textContent = attachment.type || "附件";
+            row.append(name, meta);
+            list.appendChild(row);
+          }
+          page.appendChild(list);
+        }
+
+        wrapper.appendChild(page);
+        els.viewer.appendChild(wrapper);
+      }
+
+      function appendEmailField(parent, label, value) {
+        const strong = document.createElement("strong");
+        strong.textContent = label;
+        const span = document.createElement("span");
+        span.textContent = decodeMimeWords(value);
+        parent.append(strong, span);
+      }
+
+      function firstMboxMessage(text) {
+        const normalized = String(text || "").replace(/\r\n/g, "\n");
+        const parts = normalized.split(/\nFrom .*\n/g).filter((part) => part.trim());
+        return parts[0] || normalized;
+      }
+
+      function parseEmailMessage(raw) {
+        const normalized = String(raw || "").replace(/\r\n/g, "\n");
+        const splitIndex = normalized.search(/\n\n/);
+        const headerText = splitIndex >= 0 ? normalized.slice(0, splitIndex) : "";
+        const bodyText = splitIndex >= 0 ? normalized.slice(splitIndex + 2) : normalized;
+        const headers = parseEmailHeaders(headerText);
+        const contentType = headers["content-type"] || "";
+        const boundary = (contentType.match(/boundary="?([^";]+)"?/i) || [])[1] || "";
+        const attachments = [];
+        let body = bodyText;
+
+        if (boundary) {
+          const parts = bodyText.split(`--${boundary}`);
+          const readable = [];
+          for (const part of parts) {
+            const index = part.search(/\n\n/);
+            if (index < 0) continue;
+            const partHeaders = parseEmailHeaders(part.slice(0, index));
+            const partBody = part.slice(index + 2).trim();
+            const disposition = partHeaders["content-disposition"] || "";
+            const partType = partHeaders["content-type"] || "";
+            const fileName = extractMailFileName(disposition) || extractMailFileName(partType);
+
+            if (/attachment/i.test(disposition) || fileName) {
+              attachments.push({ name: fileName || "未命名附件", type: cleanContentType(partType) });
+            } else if (/text\/plain/i.test(partType)) {
+              readable.push(decodeTransferText(partBody, partHeaders["content-transfer-encoding"]));
+            } else if (!readable.length && /text\/html/i.test(partType)) {
+              readable.push(stripHtml(decodeTransferText(partBody, partHeaders["content-transfer-encoding"])));
+            }
+          }
+          body = readable.filter(Boolean).join("\n\n");
+        } else if (/text\/html/i.test(contentType)) {
+          body = stripHtml(bodyText);
+        }
+
+        return {
+          from: headers.from || "",
+          to: headers.to || "",
+          date: headers.date || "",
+          subject: decodeMimeWords(headers.subject || ""),
+          body: decodeTransferText(body.trim(), headers["content-transfer-encoding"]),
+          attachments
+        };
+      }
+
+      function parseEmailHeaders(text) {
+        const headers = {};
+        let current = "";
+        for (const line of String(text || "").split("\n")) {
+          if (/^\s/.test(line) && current) {
+            headers[current] += ` ${line.trim()}`;
+            continue;
+          }
+          const match = line.match(/^([^:]+):\s*(.*)$/);
+          if (!match) continue;
+          current = match[1].toLowerCase();
+          headers[current] = match[2].trim();
+        }
+        return headers;
+      }
+
+      function extractMailFileName(value) {
+        const encoded = String(value || "").match(/filename\*=UTF-8''([^;]+)/i);
+        if (encoded) {
+          try {
+            return decodeURIComponent(encoded[1].replace(/^"|"$/g, ""));
+          } catch {
+            return encoded[1];
+          }
+        }
+        const plain = String(value || "").match(/filename="?([^";]+)"?/i) || String(value || "").match(/name="?([^";]+)"?/i);
+        return plain ? decodeMimeWords(plain[1]) : "";
+      }
+
+      function cleanContentType(value) {
+        return String(value || "").split(";")[0].trim() || "附件";
+      }
+
+      function decodeTransferText(text, encoding = "") {
+        const value = String(text || "").trim();
+        if (/base64/i.test(encoding)) {
+          try {
+            const binary = atob(value.replace(/\s/g, ""));
+            return new TextDecoder("utf-8").decode(Uint8Array.from(binary, (char) => char.charCodeAt(0)));
+          } catch {
+            return value;
+          }
+        }
+        if (/quoted-printable/i.test(encoding)) {
+          return value
+            .replace(/=\n/g, "")
+            .replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+        }
+        return value;
+      }
+
+      function decodeMimeWords(value) {
+        return String(value || "").replace(/=\?([^?]+)\?([BQ])\?([^?]+)\?=/gi, (_, charset, mode, text) => {
+          try {
+            if (mode.toUpperCase() === "B") {
+              const binary = atob(text);
+              return new TextDecoder(charset).decode(Uint8Array.from(binary, (char) => char.charCodeAt(0)));
+            }
+            const decoded = text.replace(/_/g, " ").replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+            return new TextDecoder(charset).decode(Uint8Array.from(decoded, (char) => char.charCodeAt(0)));
+          } catch {
+            return text;
+          }
+        });
+      }
+
+      function stripHtml(html) {
+        const template = document.createElement("template");
+        template.innerHTML = String(html || "");
+        template.content.querySelectorAll("script, style, iframe, object").forEach((node) => node.remove());
+        return template.content.textContent.replace(/\n{3,}/g, "\n\n").trim();
+      }
+
       function renderCapabilitySummary(options = {}) {
         const info = getCapabilityInfo(state.extension);
         const title = options.title || info.title;
         const detail = options.detail || info.detail;
         const category = options.category || info.category;
+        const notes = options.notes || info.notes;
         const wrapper = createPagedView("summary-view", "summary-page");
         const page = wrapper.firstElementChild;
 
@@ -2017,7 +2551,7 @@
 
         const stack = document.createElement("div");
         stack.className = "summary-stack";
-        for (const item of info.notes) {
+        for (const item of notes) {
           const chip = document.createElement("div");
           chip.className = "summary-chip";
           const strong = document.createElement("strong");
@@ -2036,11 +2570,53 @@
       function getCapabilityInfo(ext) {
         const groups = [
           {
+            match: ["doc", "dot", "rtf", "odt", "xls", "xlsb", "xlt", "xltm", "ods", "fods", "numbers", "ppt", "odp"],
+            title: "Office 兼容文档已识别",
+            category: "办公文档",
+            detail: "增强预览可用时会交给 File Viewer 的 Office 链路处理；本地回退模式会保留文件信息和下载入口。",
+            notes: [["覆盖", "包含旧版 Word、Excel、PPT、RTF、OpenDocument 等业务文档。"], ["建议", "若需要完全还原版式，可保持增强预览资产可访问。"]]
+          },
+          {
+            match: ["ofd"],
+            title: "OFD 版式文档已识别",
+            category: "国产版式文档",
+            detail: "增强预览可用时会交给 OFD 浏览器端渲染器；回退模式提供安全摘要和下载入口。",
+            notes: [["场景", "电子发票、公文、归档材料。"], ["边界", "OFD 高保真渲染需要专用解析器。"]]
+          },
+          {
+            match: ["eml", "msg", "mbox"],
+            title: "邮件归档已识别",
+            category: "邮件",
+            detail: "EML/MBOX 会尽量在本地提取正文和附件名；MSG 可交给增强预览邮件链路，回退时只做安全摘要。",
+            notes: [["安全", "邮件 HTML 不会执行脚本。"], ["附件", "增强预览可进一步处理邮件中的附件预览。"]]
+          },
+          {
             match: ["dwg", "dxf", "dwf", "dwfx", "xps"],
             title: "工程图纸已识别",
             category: "工程图纸（CAD/DWF）",
             detail: "K-Vault 已识别工程图纸类型。当前轻量预览提供安全摘要，完整矢量/图层渲染建议后续接入专用 CAD 渲染器。",
             notes: [["边界", "不在浏览器里执行不可信二进制指令。"], ["建议", "业务侧优先提供 PDF、DXF 或受控 CAD 预览服务。"]]
+          },
+          {
+            match: ["drawio", "dio", "excalidraw", "mermaid", "mmd", "plantuml", "puml"],
+            title: "绘图/流程图已识别",
+            category: "绘图文件",
+            detail: "增强预览可用时会尝试渲染 Draw.io、Excalidraw、Mermaid、PlantUML 等图形；回退模式给出安全摘要。",
+            notes: [["场景", "架构图、流程图、白板草图、UML。"], ["策略", "图形渲染属于按需加载能力，不进入后台首屏。"]]
+          },
+          {
+            match: ["xmind"],
+            title: "XMind 脑图已识别",
+            category: "脑图",
+            detail: "增强预览可用时会解析 XMind 包结构并渲染脑图；回退模式保留安全摘要。",
+            notes: [["场景", "知识结构、会议纪要、项目规划。"], ["建议", "需要高质量脑图缩放时使用增强预览链路。"]]
+          },
+          {
+            match: ["geojson", "kml", "gpx", "shp"],
+            title: "地理数据已识别",
+            category: "地理数据",
+            detail: "增强预览可用时会尝试转为 GeoJSON 并渲染点线面；回退模式不解析坐标数据。",
+            notes: [["场景", "轨迹、边界、轻量 GIS 数据。"], ["边界", "复杂坐标系和大体积 SHP 需要专用渲染器。"]]
           },
           {
             match: ["psd", "ai", "eps"],
@@ -2064,9 +2640,23 @@
             notes: [["推荐格式", "浏览器预览优先使用 GLB/GLTF。"], ["边界", "STEP/IFC/IGES 通常需要专业几何内核。"]]
           },
           {
-            match: ["ofd", "typ", "typst", "xmind", "drawio", "dio", "epub", "umd", "geojson", "kml", "gpx", "shp"],
+            match: ["epub", "umd"],
+            title: "电子书已识别",
+            category: "电子书",
+            detail: "增强预览可用时会读取目录与章节资源；回退模式提供安全摘要。",
+            notes: [["场景", "培训手册、长篇阅读材料。"], ["策略", "正文解析按需执行，避免大文件阻塞。"]]
+          },
+          {
+            match: ["olb", "dra", "gds", "oas", "oasis"],
+            title: "EDA 文件已识别",
+            category: "电子设计附件",
+            detail: "增强预览可用时会尝试读取版图或封装结构；回退模式只做安全摘要。",
+            notes: [["场景", "元件库、封装图纸、芯片版图初筛。"], ["边界", "预览不替代专业电气/几何校核。"]]
+          },
+          {
+            match: ["typ", "typst"],
             title: "专业文档类型已识别",
-            category: "知识 / 地理 / 绘图",
+            category: "排版文档",
             detail: "当前提供安全摘要。此类格式可后续按业务优先级接入独立渲染器，避免拖慢普通文件首屏。",
             notes: [["策略", "命中格式后再加载重型依赖。"], ["建议", "常用附件优先沉淀为 PDF、Markdown、图片或稳定交换格式。"]]
           }

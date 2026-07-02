@@ -1588,7 +1588,7 @@
         },
         document: {
           name: '文件',
-          exts: ['pdf', 'ofd', 'doc', 'docx', 'docm', 'dotx', 'dotm', 'rtf', 'odt', 'xls', 'xlsx', 'xlsm', 'xltx', 'xltm', 'ppt', 'pptx', 'pptm', 'ppsx', 'ppsm', 'potx', 'potm', 'txt', 'md', 'markdown', 'zip', 'jar', 'rar', '7z', 'tar', 'tgz', 'gz', 'gzip', 'bz2', 'xz', 'exe', 'apk', 'dmg', 'iso', 'msi', 'deb', 'rpm', 'json', 'jsonc', 'json5', 'xml', 'csv', 'tsv', 'sql', 'html', 'css', 'js', 'ts', 'tsx', 'jsx', 'vue', 'py', 'java', 'go', 'rs', 'cpp', 'c', 'h', 'ttf', 'otf', 'woff', 'woff2', 'psd', 'ai', 'eps', 'sqlite', 'db', 'parquet', 'avro', 'wasm', 'dwg', 'dxf', 'dwf', 'dwfx', 'xmind', 'drawio', 'dio', 'epub', 'geojson', 'kml', 'gpx', 'glb', 'gltf', 'obj', 'stl', 'ply', 'fbx'],
+          exts: ['pdf', 'ofd', 'typ', 'typst', 'doc', 'dot', 'docx', 'docm', 'dotx', 'dotm', 'rtf', 'odt', 'xls', 'xlsb', 'xlsx', 'xlsm', 'xlt', 'xltx', 'xltm', 'ods', 'fods', 'numbers', 'ppt', 'pptx', 'pptm', 'ppsx', 'ppsm', 'potx', 'potm', 'odp', 'txt', 'md', 'markdown', 'zip', 'zipx', 'jar', 'war', 'ear', 'rar', '7z', 'tar', 'tgz', 'gz', 'gzip', 'bz2', 'bzip2', 'tbz', 'tbz2', 'xz', 'txz', 'lzma', 'zst', 'cab', 'iso', 'exe', 'apk', 'dmg', 'msi', 'deb', 'rpm', 'json', 'jsonc', 'json5', 'xml', 'csv', 'tsv', 'sql', 'html', 'css', 'js', 'ts', 'tsx', 'jsx', 'vue', 'py', 'java', 'go', 'rs', 'cpp', 'c', 'h', 'ttf', 'otf', 'woff', 'woff2', 'eml', 'msg', 'mbox', 'psd', 'ai', 'eps', 'sqlite', 'sqlite3', 'db', 'parquet', 'avro', 'wasm', 'webarchive', 'dwg', 'dxf', 'dwf', 'dwfx', 'xps', 'xmind', 'drawio', 'dio', 'excalidraw', 'mermaid', 'mmd', 'plantuml', 'puml', 'epub', 'umd', 'geojson', 'kml', 'gpx', 'shp', 'glb', 'gltf', 'obj', 'stl', 'ply', 'fbx', 'dae', '3ds', '3mf', 'usd', 'usdz', 'kmz', 'step', 'stp', 'iges', 'igs', 'ifc', 'olb', 'dra', 'gds', 'oas', 'oasis'],
           icon: 'fas fa-folder-open',
           count: 0
         }
@@ -3760,13 +3760,14 @@
         const iconMap = {
           'pdf': 'fas fa-file-pdf',
           'ofd,typ,typst': 'fas fa-file-pdf',
-          'doc,docx,docm,dotx,dotm,rtf,odt': 'fas fa-file-word',
-          'xls,xlsx,xlsm,xltx,xltm,csv,tsv': 'fas fa-file-excel',
-          'ppt,pptx,pptm,ppsx,ppsm,potx,potm': 'fas fa-file-powerpoint',
-          'txt,md,markdown,log,patch,diff': 'fas fa-file-lines',
-          'zip,jar,rar,7z,tar,tgz,gz,gzip,bz2,xz': 'fas fa-file-zipper',
-          'html,htm,css,js,ts,jsx,tsx,vue,php,py,java,c,cpp,h,hpp,cs,go,rs,rb,pl,sh,sql': 'fas fa-file-code',
-          'json,jsonc,json5,xml,yaml,yml,toml,proto,hcl,graphql': 'fas fa-file-code',
+          'doc,dot,docx,docm,dotx,dotm,rtf,odt': 'fas fa-file-word',
+          'xls,xlsb,xlsx,xlsm,xlt,xltx,xltm,ods,fods,numbers,csv,tsv': 'fas fa-file-excel',
+          'ppt,pptx,pptm,ppsx,ppsm,potx,potm,odp': 'fas fa-file-powerpoint',
+          'txt,md,markdown,log,patch,diff,bundle,bdl': 'fas fa-file-lines',
+          'zip,zipx,jar,war,ear,rar,7z,tar,tgz,gz,gzip,bz2,bzip2,tbz,tbz2,xz,txz,lzma,zst,cab,iso': 'fas fa-file-zipper',
+          'html,htm,css,js,ts,jsx,tsx,vue,php,py,java,c,cpp,h,hpp,cs,go,rs,rb,pl,sh,sql,bash,cc': 'fas fa-file-code',
+          'json,jsonc,json5,xml,yaml,yml,toml,proto,hcl,graphql,gv': 'fas fa-file-code',
+          'eml,msg,mbox': 'fas fa-envelope',
           'mp4,avi,mov,wmv,flv,mkv,webm,m4v,m3u8,3gp,ts,mts,m2ts': 'fas fa-file-video',
           'mp3,mpeg,wav,ogg,oga,flac,aac,m4a,wma,ape,opus,weba,midi,mid,aif,aiff': 'fas fa-file-audio',
           'jpg,jpeg,jfif,png,apng,gif,bmp,webp,svg,ico,tif,tiff,heic,heif,avif,jxl': 'fas fa-file-image',
@@ -3775,7 +3776,7 @@
           'sqlite,sqlite3,db,parquet,avro,wasm,webarchive': 'fas fa-database',
           'dwg,dxf,dwf,dwfx,xps': 'fas fa-drafting-compass',
           'glb,gltf,obj,stl,ply,fbx,dae,3ds,3mf,usd,usdz,kmz,step,stp,iges,igs,ifc': 'fas fa-cube',
-          'xmind,drawio,dio,epub,umd,geojson,kml,gpx,shp': 'fas fa-diagram-project',
+          'xmind,drawio,dio,excalidraw,mermaid,mmd,plantuml,puml,epub,umd,geojson,kml,gpx,shp,olb,dra,gds,oas,oasis': 'fas fa-diagram-project',
           'exe,msi,app,dmg,deb,rpm': 'fas fa-file-arrow-down'
         };
         for(const [exts, icon] of Object.entries(iconMap)) {
