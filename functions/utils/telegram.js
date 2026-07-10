@@ -242,23 +242,31 @@ export function buildTelegramDirectLink(env, directId, fallbackOrigin = "") {
   return `${base}/file/${directId}`;
 }
 
+function escapeTelegramHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 export function buildTelegramUploadNoticeText({
   directLink,
-  fileId,
-  messageId,
   fileName,
   fileSize,
 }) {
-  const safeName = truncateFileName(fileName || "", 120) || "unnamed";
-  const lines = [
-    "Upload completed",
-    `Name: ${safeName}`,
-    `Size: ${formatFileSize(fileSize)}`,
-    `Direct Link: ${directLink}`,
-    `File ID: ${fileId}`,
-  ];
-  if (messageId) lines.push(`Message ID: ${messageId}`);
-  return lines.join("\n");
+  const safeName = escapeTelegramHtml(
+    truncateFileName(fileName || "", 120) || "unnamed"
+  );
+  const safeLink = escapeTelegramHtml(directLink || "");
+  return `✅ <b>已上传</b>\n\n<a href="${safeLink}">${safeName}</a>\n<code>${formatFileSize(fileSize)} · Telegram</code>`;
+}
+
+function buildTelegramUploadNoticeKeyboard(directLink) {
+  if (!directLink) return undefined;
+  return {
+    inline_keyboard: [[{ text: "↗ 打开文件", url: directLink }]],
+  };
 }
 
 async function postTelegramMessage(payload, env) {
@@ -306,7 +314,9 @@ export async function sendTelegramUploadNotice(
   const payload = {
     chat_id: targetChatId,
     text: finalText,
+    parse_mode: "HTML",
     disable_web_page_preview: true,
+    reply_markup: buildTelegramUploadNoticeKeyboard(directLink),
   };
 
   if (replyToMessageId) {
@@ -321,7 +331,9 @@ export async function sendTelegramUploadNotice(
       const fallbackPayload = {
         chat_id: targetChatId,
         text: finalText,
+        parse_mode: "HTML",
         disable_web_page_preview: true,
+        reply_markup: buildTelegramUploadNoticeKeyboard(directLink),
       };
       result = await postTelegramMessage(fallbackPayload, env);
     }
