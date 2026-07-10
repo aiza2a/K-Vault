@@ -16,6 +16,7 @@ import {
   shouldUseSignedTelegramLinks,
   shouldWriteTelegramMetadata,
 } from "./utils/telegram.js";
+import { writeFileMetadata } from "./utils/file-index.js";
 
 const MB = 1024 * 1024;
 
@@ -271,8 +272,10 @@ async function uploadToTelegramStorage(
   );
 
   if (env.img_url && shouldWriteTelegramMetadata(env)) {
-    await env.img_url.put(`${fileId}.${fileExtension}`, "", {
-      metadata: appendCommonMetadata(
+    const indexResult = await writeFileMetadata(
+      env,
+      `${fileId}.${fileExtension}`,
+      appendCommonMetadata(
         {
           TimeStamp: Date.now(),
           ListType: "None",
@@ -286,8 +289,11 @@ async function uploadToTelegramStorage(
           signedLink: shouldUseSignedTelegramLinks(env),
         },
         folderPath
-      ),
-    });
+      )
+    );
+    if (indexResult.index === "d1") {
+      console.warn("KV write limit reached; stored Telegram metadata in D1.");
+    }
   }
 
   const directLink = buildTelegramDirectLink(env, directId, fallbackOrigin);

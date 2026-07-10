@@ -2,7 +2,9 @@
 
 English version: [README-DOCKER-EN.md](README-DOCKER-EN.md)
 
-## 结论
+### D1 溢出索引（Cloudflare Pages 可选）
+
+当 `img_url` KV 达到每日写入额度时，配置名为 `FILE_INDEX_DB` 的 D1 binding 后，新文件元数据会自动写入 D1。文件下载和 `/api/file-info` 会先读取 KV，再回退读取 D1；文件本体仍保存在既有 Telegram、R2、S3、GitHub 或其他存储后端。
 
 Docker 部署现在只有一个镜像：
 

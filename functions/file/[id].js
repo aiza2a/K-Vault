@@ -1,4 +1,5 @@
-﻿import { createS3Client } from '../utils/s3client.js';
+import { readFileMetadata } from '../utils/file-index.js';
+import { createS3Client } from '../utils/s3client.js';
 import { getDiscordFileUrl } from '../utils/discord.js';
 import { getHuggingFaceFile } from '../utils/huggingface.js';
 import { getWebDAVFile } from '../utils/webdav.js';
@@ -82,7 +83,7 @@ export async function onRequest(context) {
     const record = recordResult?.record;
     const kvKey = recordResult?.kvKey || fileId;
 
-    if (env.img_url && !record?.metadata) {
+    if (!record?.metadata) {
       return errorResponse('File not found', 404);
     }
 
@@ -210,19 +211,15 @@ function blockRedirect(requestUrl, request) {
 }
 
 async function getRecordWithKey(env, fileId) {
-  if (!env.img_url) return { record: null, kvKey: fileId };
-
   const hasKnownPrefix = STORAGE_PREFIXES.some((prefix) => prefix && fileId.startsWith(prefix));
   const candidateKeys = hasKnownPrefix ? [fileId] : STORAGE_PREFIXES.map((prefix) => `${prefix}${fileId}`);
-
-  for (const key of candidateKeys) {
-    const record = await env.img_url.getWithMetadata(key);
-    if (record?.metadata) {
-      return { record, kvKey: key };
-    }
-  }
-
-  return { record: null, kvKey: fileId };
+  const found = await readFileMetadata(env, candidateKeys);
+  if (!found?.metadata) return { record: null, kvKey: fileId };
+  return {
+    record: { metadata: found.metadata },
+    kvKey: found.key,
+    indexSource: found.source,
+  };
 }
 
 function getSharePassword(request) {

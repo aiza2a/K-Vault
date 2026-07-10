@@ -1,4 +1,5 @@
-﻿import { parseSignedTelegramFileId } from '../../utils/telegram.js';
+import { readFileMetadata } from '../../utils/file-index.js';
+import { parseSignedTelegramFileId } from '../../utils/telegram.js';
 
 // 获取文件元数据 API（包括原始文件名）
 export async function onRequest(context) {
@@ -45,24 +46,13 @@ export async function onRequest(context) {
       );
     }
 
-    if (!env.img_url) {
-      return jsonResponse({ error: 'KV storage not available' }, 500);
+    if (!env.img_url && !env.FILE_INDEX_DB) {
+      return jsonResponse({ error: 'File index storage not available' }, 500);
     }
 
     const prefixes = ['img:', 'vid:', 'aud:', 'doc:', 'r2:', 's3:', 'discord:', 'hf:', 'webdav:', 'github:', ''];
-    let record = null;
-    let foundKey = null;
-
-    for (const prefix of prefixes) {
-      const key = `${prefix}${fileId}`;
-      record = await env.img_url.getWithMetadata(key);
-      if (record && record.metadata) {
-        foundKey = key;
-        break;
-      }
-    }
-
-    if (!record || !record.metadata) {
+    const found = await readFileMetadata(env, prefixes.map((prefix) => `${prefix}${fileId}`));
+    if (!found?.metadata) {
       return jsonResponse(
         {
           error: 'File not found',
@@ -74,12 +64,12 @@ export async function onRequest(context) {
       );
     }
 
-    const metadata = record.metadata;
+    const metadata = found.metadata;
     return jsonResponse(
       {
         success: true,
         fileId,
-        key: foundKey,
+        key: found.key,
         fileName: metadata.fileName || fileId,
         originalName: metadata.fileName || null,
         fileSize: metadata.fileSize || 0,
