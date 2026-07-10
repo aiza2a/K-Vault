@@ -59,3 +59,18 @@ export async function readFileMetadata(env, keys) {
     return null;
   }
 }
+
+export async function listD1FolderMarkers(env) {
+  if (!env?.FILE_INDEX_DB) return [];
+  const result = await env.FILE_INDEX_DB
+    .prepare("SELECT file_key, metadata_json FROM file_index WHERE file_key LIKE 'folder:%'")
+    .all();
+
+  return (result.results || []).flatMap((row) => {
+    try {
+      return [{ name: row.file_key, metadata: JSON.parse(row.metadata_json) }];
+    } catch {
+      return [];
+    }
+  });
+}

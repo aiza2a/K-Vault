@@ -1,4 +1,6 @@
-﻿const STORAGE_PREFIXES = ['img:', 'vid:', 'aud:', 'doc:', 'r2:', 's3:', 'discord:', 'hf:', 'webdav:', 'github:', ''];
+import { listD1FolderMarkers, writeFileMetadata } from '../../utils/file-index.js';
+
+const STORAGE_PREFIXES = ['img:', 'vid:', 'aud:', 'doc:', 'r2:', 's3:', 'discord:', 'hf:', 'webdav:', 'github:', ''];
 const INVALID_PREFIXES = ['session:', 'chunk:', 'upload:', 'temp:'];
 
 function normalizeFolderPath(value = '') {
@@ -153,9 +155,14 @@ export async function onRequestGet(context) {
     }))
     .filter((item) => matchStorage(item.metadata?.storageType, storageFilter));
 
-  const folderMarkers = allKeys
-    .filter(isFolderMarker)
-    .filter((item) => matchStorage(inferStorageType(item.name, item.metadata || {}), storageFilter));
+  const folderMarkers = [
+    ...allKeys
+      .filter(isFolderMarker)
+      .filter((item) => matchStorage(inferStorageType(item.name, item.metadata || {}), storageFilter)),
+    ...(await listD1FolderMarkers(env)).filter((item) =>
+      matchStorage(inferStorageType(item.name, item.metadata || {}), storageFilter)
+    ),
+  ];
 
   return json({
     success: true,
@@ -175,13 +182,14 @@ export async function onRequestPost(context) {
     return json({ success: false, error: 'path is required.' }, 400);
   }
 
-  await env.img_url.put(`folder:${path}`, '', {
-    metadata: {
-      folderMarker: true,
-      folderPath: path,
-      TimeStamp: Date.now(),
-    },
+  const indexResult = await writeFileMetadata(env, `folder:${path}`, {
+    folderMarker: true,
+    folderPath: path,
+    TimeStamp: Date.now(),
   });
+  if (indexResult.index === 'd1') {
+    console.warn('KV write limit reached; stored folder marker in D1.');
+  }
 
   return json({ success: true, path });
 }
