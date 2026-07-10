@@ -1,3 +1,5 @@
+import { readState, writeState } from './state-index.js';
+
 const TOKEN_PREFIX = 'kvault_';
 const TOKEN_KEY_PREFIX = 'api_token:';
 const VALID_SCOPES = new Set(['upload', 'read', 'delete', 'paste']);
@@ -113,7 +115,7 @@ async function getRecordById(tokenId, env) {
   ensureKvBinding(env);
   const id = sanitizeTokenId(tokenId);
   if (!id) return null;
-  const value = await env.img_url.get(`${TOKEN_KEY_PREFIX}${id}`, { type: 'json' });
+  const value = await readState(env, `${TOKEN_KEY_PREFIX}${id}`, { type: 'json' });
   if (!value || typeof value !== 'object') return null;
   return {
     ...value,
@@ -128,7 +130,7 @@ async function getRecordById(tokenId, env) {
 
 async function putRecord(record, env) {
   ensureKvBinding(env);
-  await env.img_url.put(`${TOKEN_KEY_PREFIX}${record.id}`, JSON.stringify(record));
+  await writeState(env, `${TOKEN_KEY_PREFIX}${record.id}`, JSON.stringify(record));
 }
 
 async function generateUniqueTokenId(env, maxAttempts = 10) {

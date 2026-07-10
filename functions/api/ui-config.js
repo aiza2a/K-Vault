@@ -1,4 +1,5 @@
 import { checkAuthentication, isAuthRequired } from '../utils/auth.js';
+import { readState, writeState } from '../utils/state-index.js';
 import { apiError, apiSuccess } from '../utils/api-v1.js';
 
 const UI_CONFIG_KEY = 'ui_config';
@@ -110,7 +111,7 @@ export async function onRequestGet(context) {
 
   let saved = null;
   try {
-    saved = await kv.binding.get(UI_CONFIG_KEY, { type: 'json' });
+    saved = await readState(context.env, UI_CONFIG_KEY, { type: 'json' });
   } catch (error) {
     console.error('[ui-config] Failed to read config from KV:', {
       binding: kv.name,
@@ -127,7 +128,7 @@ export async function onRequestGet(context) {
   const config = normalizeUiConfig(saved || DEFAULT_UI_CONFIG);
   return apiSuccess({
     config,
-    source: saved ? 'kv' : 'default',
+    source: saved ? 'index' : 'default',
     binding: kv.name,
   });
 }
@@ -156,7 +157,7 @@ export async function onRequestPost(context) {
 
   const config = normalizeUiConfig(extractUiConfigPayload(body));
   try {
-    await kv.binding.put(UI_CONFIG_KEY, JSON.stringify(config));
+    await writeState(context.env, UI_CONFIG_KEY, JSON.stringify(config));
   } catch (error) {
     console.error('[ui-config] Failed to write config to KV:', {
       binding: kv.name,
