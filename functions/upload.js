@@ -403,22 +403,26 @@ async function uploadToR2(file, fileName, fileExtension, env, folderPath = "") {
       customMetadata: { fileName, uploadTime: Date.now().toString() },
     });
 
-    if (env.img_url) {
-      await env.img_url.put(`r2:${objectKey}`, "", {
-        metadata: appendCommonMetadata(
-          {
-            TimeStamp: Date.now(),
-            ListType: "None",
-            Label: "None",
-            liked: false,
-            fileName,
-            fileSize: file.size,
-            storageType: "r2",
-            r2Key: objectKey,
-          },
-          folderPath
-        ),
-      });
+    const kvKey = `r2:${objectKey}`;
+    const indexResult = await writeFileMetadata(
+      env,
+      kvKey,
+      appendCommonMetadata(
+        {
+          TimeStamp: Date.now(),
+          ListType: "None",
+          Label: "None",
+          liked: false,
+          fileName,
+          fileSize: file.size,
+          storageType: "r2",
+          r2Key: objectKey,
+        },
+        folderPath
+      )
+    );
+    if (indexResult.index === "d1") {
+      console.warn("KV write limit reached; stored R2 metadata in D1.");
     }
 
     return new Response(JSON.stringify([{ src: `/file/r2:${objectKey}` }]), {
@@ -618,23 +622,26 @@ async function uploadToGitHubStorage(file, fileName, fileExtension, env, folderP
     );
 
     const kvKey = `github:${publicId}`;
-    if (env.img_url) {
-      await env.img_url.put(kvKey, "", {
-        metadata: appendCommonMetadata(
-          {
-            TimeStamp: Date.now(),
-            ListType: "None",
-            Label: "None",
-            liked: false,
-            fileName,
-            fileSize: file.size,
-            storageType: "github",
-            githubStorageKey: normalizeGitHubStoragePath(result.storagePath || githubStorageKey),
-            ...(result.metadata || {}),
-          },
-          folderPath
-        ),
-      });
+    const indexResult = await writeFileMetadata(
+      env,
+      kvKey,
+      appendCommonMetadata(
+        {
+          TimeStamp: Date.now(),
+          ListType: "None",
+          Label: "None",
+          liked: false,
+          fileName,
+          fileSize: file.size,
+          storageType: "github",
+          githubStorageKey: normalizeGitHubStoragePath(result.storagePath || githubStorageKey),
+          ...(result.metadata || {}),
+        },
+        folderPath
+      )
+    );
+    if (indexResult.index === "d1") {
+      console.warn("KV write limit reached; stored GitHub metadata in D1.");
     }
 
     return new Response(JSON.stringify([{ src: `/file/${kvKey}` }]), {
