@@ -570,23 +570,26 @@ async function uploadToWebDAVStorage(file, fileName, fileExtension, env, folderP
     const result = await uploadToWebDAV(arrayBuffer, webdavPath, file.type || "application/octet-stream", env);
 
     const kvKey = `webdav:${publicId}`;
-    if (env.img_url) {
-      await env.img_url.put(kvKey, "", {
-        metadata: appendCommonMetadata(
-          {
-            TimeStamp: Date.now(),
-            ListType: "None",
-            Label: "None",
-            liked: false,
-            fileName,
-            fileSize: file.size,
-            storageType: "webdav",
-            webdavPath: normalizeWebDAVPath(result.path || webdavPath),
-            webdavEtag: result.etag || undefined,
-          },
-          folderPath
-        ),
-      });
+    const indexResult = await writeFileMetadata(
+      env,
+      kvKey,
+      appendCommonMetadata(
+        {
+          TimeStamp: Date.now(),
+          ListType: "None",
+          Label: "None",
+          liked: false,
+          fileName,
+          fileSize: file.size,
+          storageType: "webdav",
+          webdavPath: normalizeWebDAVPath(result.path || webdavPath),
+          webdavEtag: result.etag || undefined,
+        },
+        folderPath
+      )
+    );
+    if (indexResult.index === "d1") {
+      console.warn("KV write limit reached; stored WebDAV metadata in D1.");
     }
 
     return new Response(JSON.stringify([{ src: `/file/${kvKey}` }]), {
