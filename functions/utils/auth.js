@@ -7,6 +7,8 @@ const SESSION_COOKIE_NAME = 'k_vault_session';
 const LEGACY_SESSION_COOKIE_NAME = 'katelya_session';
 const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24小时
 
+import { deleteState, readState, writeState } from './state-index.js';
+
 /**
  * 生成会话令牌
  */
@@ -67,14 +69,14 @@ export function getSessionFromCookie(request) {
  */
 export async function verifySession(sessionToken, env) {
   if (!sessionToken || !env.img_url) return false;
-  
+
   try {
-    const sessionData = await env.img_url.get(`session:${sessionToken}`, { type: 'json' });
+    const sessionData = await readState(env, `session:${sessionToken}`, { type: 'json' });
     if (!sessionData) return false;
     
     // 检查会话是否过期
     if (Date.now() > sessionData.expiresAt) {
-      await env.img_url.delete(`session:${sessionToken}`);
+      await deleteState(env, `session:${sessionToken}`);
       return false;
     }
     
@@ -96,8 +98,8 @@ export async function createSession(user, env) {
     expiresAt: Date.now() + SESSION_DURATION
   };
   
-  await env.img_url.put(`session:${token}`, JSON.stringify(sessionData), {
-    expirationTtl: Math.floor(SESSION_DURATION / 1000)
+  await writeState(env, `session:${token}`, JSON.stringify(sessionData), {
+    expirationTtl: Math.floor(SESSION_DURATION / 1000),
   });
   
   return token;
@@ -108,7 +110,7 @@ export async function createSession(user, env) {
  */
 export async function deleteSession(sessionToken, env) {
   if (sessionToken && env.img_url) {
-    await env.img_url.delete(`session:${sessionToken}`);
+    await deleteState(env, `session:${sessionToken}`);
   }
 }
 
