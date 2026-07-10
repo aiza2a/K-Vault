@@ -67,60 +67,65 @@ export async function onRequest(context) {
     return handleOptions();
   }
 
-  let fileId = params.id;
-  if (!fileId) {
-    return errorResponse('Missing file id', 400);
-  }
-
-  const signedTelegramMeta = await parseSignedTelegramFileId(fileId, env);
-  if (signedTelegramMeta) {
-    return handleSignedTelegramFile(context, signedTelegramMeta);
-  }
-
-  const recordResult = await getRecordWithKey(env, fileId);
-  const record = recordResult?.record;
-  const kvKey = recordResult?.kvKey || fileId;
-
-  if (env.img_url && !record?.metadata) {
-    return errorResponse('File not found', 404);
-  }
-
-  let shareAccess = null;
-  if (record?.metadata) {
-    shareAccess = await verifyShareAccess(context, record.metadata, kvKey);
-    if (shareAccess?.response) {
-      return shareAccess.response;
+  try {
+    let fileId = params.id;
+    if (!fileId) {
+      return errorResponse('Missing file id', 400);
     }
-  }
 
-  const storageType = inferStorageType(fileId, record?.metadata || {});
-  let response;
-  if (storageType === 'r2') {
-    response = await handleR2File(context, record?.metadata?.r2Key || fileId, record);
-  } else if (storageType === 's3') {
-    response = await handleS3File(context, fileId, record);
-  } else if (storageType === 'discord') {
-    response = await handleDiscordFile(context, fileId, record);
-  } else if (storageType === 'huggingface') {
-    response = await handleHFFile(context, fileId, record);
-  } else if (storageType === 'webdav') {
-    response = await handleWebDAVFile(context, fileId, record);
-  } else if (storageType === 'github') {
-    response = await handleGitHubFile(context, fileId, record);
-  } else {
-    response = await handleTelegramFile(context, fileId, record);
-  }
+    const signedTelegramMeta = await parseSignedTelegramFileId(fileId, env);
+    if (signedTelegramMeta) {
+      return handleSignedTelegramFile(context, signedTelegramMeta);
+    }
 
-  if (shareAccess?.trackDownload && shouldCountAsDownload(request.method, response)) {
-    const updatePromise = incrementShareDownloadCount(env, shareAccess.kvKey, shareAccess.metadata);
-    if (typeof context.waitUntil === 'function') {
-      context.waitUntil(updatePromise.catch(() => {}));
+    const recordResult = await getRecordWithKey(env, fileId);
+    const record = recordResult?.record;
+    const kvKey = recordResult?.kvKey || fileId;
+
+    if (env.img_url && !record?.metadata) {
+      return errorResponse('File not found', 404);
+    }
+
+    let shareAccess = null;
+    if (record?.metadata) {
+      shareAccess = await verifyShareAccess(context, record.metadata, kvKey);
+      if (shareAccess?.response) {
+        return shareAccess.response;
+      }
+    }
+
+    const storageType = inferStorageType(fileId, record?.metadata || {});
+    let response;
+    if (storageType === 'r2') {
+      response = await handleR2File(context, record?.metadata?.r2Key || fileId, record);
+    } else if (storageType === 's3') {
+      response = await handleS3File(context, fileId, record);
+    } else if (storageType === 'discord') {
+      response = await handleDiscordFile(context, fileId, record);
+    } else if (storageType === 'huggingface') {
+      response = await handleHFFile(context, fileId, record);
+    } else if (storageType === 'webdav') {
+      response = await handleWebDAVFile(context, fileId, record);
+    } else if (storageType === 'github') {
+      response = await handleGitHubFile(context, fileId, record);
     } else {
-      updatePromise.catch(() => {});
+      response = await handleTelegramFile(context, fileId, record);
     }
-  }
 
-  return response;
+    if (shareAccess?.trackDownload && shouldCountAsDownload(request.method, response)) {
+      const updatePromise = incrementShareDownloadCount(env, shareAccess.kvKey, shareAccess.metadata);
+      if (typeof context.waitUntil === 'function') {
+        context.waitUntil(updatePromise.catch(() => {}));
+      } else {
+        updatePromise.catch(() => {});
+      }
+    }
+
+    return response;
+  } catch (error) {
+    console.error('file route error:', error);
+    return errorResponse(`File proxy error: ${error?.message || 'Unknown error'}`, 502);
+  }
 }
 
 function inferStorageType(name, metadata = {}) {
@@ -437,25 +442,31 @@ async function handleR2File(context, r2Key, record = null) {
 
   const rangeHeader = request.headers.get('Range');
   let object;
+  let responseStatus = 200;
+  let contentLength = null;
+  let contentRange = null;
 
   if (rangeHeader) {
-    const range = parseSimpleRange(rangeHeader);
-    if (range) {
-      const head = await env.R2_BUCKET.head(r2Key);
-      if (!head) return errorResponse('File not found in R2', 404);
+    const head = await env.R2_BUCKET.head(r2Key);
+    if (!head) return errorResponse('File not found in R2', 404);
 
-      const start = range.start ?? 0;
-      const end = range.end ?? (head.size - 1);
-      if (start >= head.size) {
+    const range = parseSimpleRange(rangeHeader, head.size);
+    if (range) {
+      if (range.unsatisfiable) {
         const headers = new Headers();
         addCorsHeaders(headers);
+        headers.set('Accept-Ranges', 'bytes');
         headers.set('Content-Range', `bytes */${head.size}`);
         return new Response('Range Not Satisfiable', { status: 416, headers });
       }
 
+      const { start, end } = range;
       object = await env.R2_BUCKET.get(r2Key, {
-        range: { offset: start, length: Math.min(end, head.size - 1) - start + 1 },
+        range: { offset: start, length: end - start + 1 },
       });
+      responseStatus = 206;
+      contentLength = end - start + 1;
+      contentRange = `bytes ${start}-${end}/${head.size}`;
     }
   }
 
@@ -469,10 +480,11 @@ async function handleR2File(context, r2Key, record = null) {
 
   const headers = new Headers();
   addResponseHeaders(headers, fileName, mimeType);
-  headers.set('Content-Length', String(object.size));
+  headers.set('Content-Length', String(contentLength ?? object.size));
+  if (contentRange) headers.set('Content-Range', contentRange);
 
   return new Response(object.body, {
-    status: 200,
+    status: responseStatus,
     headers,
   });
 }
@@ -490,14 +502,37 @@ async function getR2RecordFromKV(env, r2Key) {
   return null;
 }
 
-function parseSimpleRange(rangeHeader) {
-  const match = String(rangeHeader || '').match(/bytes=(\d*)-(\d*)/);
+function parseSimpleRange(rangeHeader, size = null) {
+  const match = String(rangeHeader || '').match(/^bytes=(\d*)-(\d*)$/);
   if (!match) return null;
 
-  const start = match[1] ? parseInt(match[1], 10) : null;
-  const end = match[2] ? parseInt(match[2], 10) : null;
+  const hasStart = match[1] !== '';
+  const hasEnd = match[2] !== '';
+  if (!hasStart && !hasEnd) return null;
 
-  if (start == null && end == null) return null;
+  let start;
+  let end;
+
+  if (!hasStart) {
+    const suffixLength = parseInt(match[2], 10);
+    if (!Number.isFinite(suffixLength) || suffixLength <= 0) return null;
+    if (size == null) return { start: null, end: suffixLength };
+    start = Math.max(size - suffixLength, 0);
+    end = size - 1;
+  } else {
+    start = parseInt(match[1], 10);
+    end = hasEnd ? parseInt(match[2], 10) : (size == null ? null : size - 1);
+  }
+
+  if (!Number.isFinite(start) || (end != null && !Number.isFinite(end))) return null;
+
+  if (size != null) {
+    if (start >= size || (end != null && start > end)) {
+      return { unsatisfiable: true };
+    }
+    end = Math.min(end ?? size - 1, size - 1);
+  }
+
   return { start, end };
 }
 

@@ -133,6 +133,13 @@ async function checkHealthAndStatus() {
     }
   }
   logOk('/api/status includes all storage keys');
+
+  if (SMOKE_STORAGE_TYPE) {
+    const smokeStatus = status.payload?.[SMOKE_STORAGE_TYPE];
+    if (smokeStatus?.configured && !smokeStatus?.connected) {
+      throw new Error(`/api/status reports ${SMOKE_STORAGE_TYPE} disconnected: ${smokeStatus.message || smokeStatus.detail || 'unknown error'}`);
+    }
+  }
 }
 
 function parseSmokeConfig() {
@@ -189,6 +196,9 @@ async function storageCrudAndSelection() {
     });
     const testBody = createdTest.payload || {};
     const testResult = testBody.result || testBody;
+    if (!testResult.connected) {
+      throw new Error(`created storage test failed: ${testResult.detail || testResult.message || 'unknown error'}`);
+    }
     logOk(`created storage test -> connected=${Boolean(testResult.connected)} status=${testResult.status || 'n/a'}`);
 
     await request(`/api/storage/default/${encodeURIComponent(created.id)}`, {
@@ -290,9 +300,9 @@ async function cleanupStorage(createdId, originalDefaultId) {
 async function main() {
   process.stdout.write(`K-Vault storage regression start\nBASE_URL=${BASE_URL}\n`);
 
-  await checkHealthAndStatus();
   await ensureLoginIfNeeded();
   const { createdId, originalDefault } = await storageCrudAndSelection();
+  await checkHealthAndStatus();
   await uploadDownloadDeleteForEnabledStorages();
   await cleanupStorage(createdId, originalDefault);
 

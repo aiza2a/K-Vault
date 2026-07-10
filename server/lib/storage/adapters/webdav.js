@@ -44,6 +44,29 @@ function authMode(config) {
   return 'none';
 }
 
+function hasBasicAuth(config) {
+  return Boolean(config.username && config.password);
+}
+
+function hasBearerAuth(config) {
+  return Boolean(config.bearerToken);
+}
+
+function buildAuthAttemptModes(config) {
+  const attemptedModes = [];
+  const pushMode = (mode) => {
+    if (!mode || attemptedModes.includes(mode)) return;
+    attemptedModes.push(mode);
+  };
+
+  pushMode(authMode(config));
+  if (hasBearerAuth(config)) pushMode('bearer');
+  if (hasBasicAuth(config)) pushMode('basic');
+  pushMode('none');
+
+  return attemptedModes;
+}
+
 function decodeResponseTextSafe(response) {
   return response.text().catch(() => '');
 }
@@ -83,6 +106,21 @@ class WebDAVStorageAdapter {
     return headers;
   }
 
+  getAuthHeadersForMode(mode = 'none', extra = {}) {
+    const headers = { ...extra };
+    if (mode === 'bearer' && hasBearerAuth(this.config)) {
+      headers.Authorization = `Bearer ${this.config.bearerToken}`;
+      return headers;
+    }
+    if (mode === 'basic' && hasBasicAuth(this.config)) {
+      const token = Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64');
+      headers.Authorization = `Basic ${token}`;
+      return headers;
+    }
+    delete headers.Authorization;
+    return headers;
+  }
+
   buildSegments(storageKey = '') {
     return [...splitPath(this.config.rootPath), ...splitPath(storageKey)];
   }
@@ -96,6 +134,14 @@ class WebDAVStorageAdapter {
     return fetch(this.buildUrl(storageKey), {
       method,
       headers: this.getAuthHeaders(headers),
+      body,
+    });
+  }
+
+  async fetchDavForMode(method, storageKey = '', mode = 'none', { headers = {}, body = null } = {}) {
+    return fetch(this.buildUrl(storageKey), {
+      method,
+      headers: this.getAuthHeadersForMode(mode, headers),
       body,
     });
   }
@@ -115,58 +161,49 @@ class WebDAVStorageAdapter {
       let lastStatus = null;
       let lastDetail = '';
 
-      for (const rootUrl of rootCandidates) {
-        const optionsResponse = await fetch(rootUrl, {
-          method: 'OPTIONS',
-          headers: this.getAuthHeaders({ Depth: '0' }),
-        });
+      const attemptedModes = buildAuthAttemptModes(this.config);
 
-        if (optionsResponse.ok) {
-          return {
-            connected: true,
-            status: optionsResponse.status,
+      for (const mode of attemptedModes) {
+        for (const rootUrl of rootCandidates) {
+          const optionsResponse = await fetch(rootUrl, {
             method: 'OPTIONS',
-          };
-        }
+            headers: this.getAuthHeadersForMode(mode, { Depth: '0' }),
+          });
 
-        if (optionsResponse.status === 401 || optionsResponse.status === 403) {
-          return {
-            connected: false,
-            status: optionsResponse.status,
-            method: 'OPTIONS',
-            detail: 'Authentication failed for WebDAV endpoint.',
-          };
-        }
+          if (optionsResponse.ok) {
+            return {
+              connected: true,
+              status: optionsResponse.status,
+              method: 'OPTIONS',
+            };
+          }
 
-        const propfindResponse = await fetch(rootUrl, {
-          method: 'PROPFIND',
-          headers: this.getAuthHeaders({
-            Depth: '0',
-            'Content-Type': 'application/xml; charset=utf-8',
-          }),
-          body: propfindBody,
-        });
+          if (![400, 401, 403, 405].includes(optionsResponse.status)) {
+            lastStatus = optionsResponse.status;
+            lastDetail = await decodeResponseTextSafe(optionsResponse);
+          }
 
-        const connected = propfindResponse.ok || propfindResponse.status === 207;
-        if (connected) {
-          return {
-            connected: true,
-            status: propfindResponse.status,
+          const propfindResponse = await fetch(rootUrl, {
             method: 'PROPFIND',
-          };
-        }
+            headers: this.getAuthHeadersForMode(mode, {
+              Depth: '0',
+              'Content-Type': 'application/xml; charset=utf-8',
+            }),
+            body: propfindBody,
+          });
 
-        if (propfindResponse.status === 401 || propfindResponse.status === 403) {
-          return {
-            connected: false,
-            status: propfindResponse.status,
-            method: 'PROPFIND',
-            detail: 'Authentication failed for WebDAV endpoint.',
-          };
-        }
+          const connected = propfindResponse.ok || propfindResponse.status === 207;
+          if (connected) {
+            return {
+              connected: true,
+              status: propfindResponse.status,
+              method: 'PROPFIND',
+            };
+          }
 
-        lastStatus = propfindResponse.status;
-        lastDetail = await decodeResponseTextSafe(propfindResponse);
+          lastStatus = propfindResponse.status;
+          lastDetail = await decodeResponseTextSafe(propfindResponse);
+        }
       }
 
       return {
@@ -260,13 +297,42 @@ class WebDAVStorageAdapter {
     const headers = {};
     if (range) headers.Range = range;
 
-    const response = await this.fetchDav('GET', storageKey, { headers });
-    if (!response.ok && response.status !== 206) {
+    const attemptedModes = [];
+    const pushMode = (mode) => {
+      if (!mode || attemptedModes.includes(mode)) return;
+      attemptedModes.push(mode);
+    };
+
+    pushMode(authMode(this.config));
+    if (hasBearerAuth(this.config)) pushMode('bearer');
+    if (hasBasicAuth(this.config)) pushMode('basic');
+    pushMode('none');
+
+    let firstFailure = null;
+
+    for (const mode of attemptedModes) {
+      const response = await this.fetchDavForMode('GET', storageKey, mode, { headers });
+      if (response.ok || response.status === 206) {
+        return response;
+      }
       if (response.status === 404) return null;
-      const detail = await decodeResponseTextSafe(response);
-      throw new Error(`WebDAV download failed (${response.status}): ${detail || 'Unknown error'}`);
+
+      if (!firstFailure) {
+        const detail = await decodeResponseTextSafe(response);
+        firstFailure = { status: response.status, detail };
+      }
+
+      if (![400, 401, 403].includes(response.status)) {
+        const detail = await decodeResponseTextSafe(response);
+        throw new Error(`WebDAV download failed (${response.status}): ${detail || 'Unknown error'}`);
+      }
     }
-    return response;
+
+    if (firstFailure) {
+      throw new Error(`WebDAV download failed (${firstFailure.status}): ${firstFailure.detail || 'Unknown error'}`);
+    }
+
+    throw new Error('WebDAV download failed: Unknown error');
   }
 
   async delete({ storageKey }) {

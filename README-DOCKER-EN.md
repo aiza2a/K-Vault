@@ -1,332 +1,236 @@
-# K-Vault Docker Runtime Guide
+# K-Vault Docker Deployment Guide
 
 Chinese version: [README-DOCKER.md](README-DOCKER.md)
 
-This repository now supports two deployment modes:
+## Summary
 
-1. Cloudflare Pages + Functions (existing mode)
-2. Docker self-host mode (new)
+Docker now uses one image:
 
-## Quick Start (Docker)
-
-1. Initialize `.env` and secrets (safe to rerun):
-
-```bash
-npm run docker:init-env
+```text
+ghcr.io/katelya77/k-vault:latest
 ```
 
-Alternative shell entrypoint:
+The image includes:
+
+- Root static pages: `/`, `/admin.html`, `/gallery.html`, `/webdav.html`
+- Node.js/Hono API
+- Nginx entrypoint and reverse proxy
+- SQLite database and chunk temp directory, persisted under `/app/data`
+
+The old two-image `k-vault-api` plus `k-vault-web` deployment is deprecated. GitHub Actions builds and publishes only the `k-vault` GHCR package.
+
+## Simplest Deployment
+
+No repository checkout and no local Node/npm installation are required:
 
 ```bash
-./scripts/bootstrap-env.sh
+docker volume create kvault_data
+docker run -d \
+  --name kvault \
+  --restart unless-stopped \
+  -p 8080:8080 \
+  -v kvault_data:/app/data \
+  ghcr.io/katelya77/k-vault:latest
 ```
 
-Note: `scripts/bootstrap-env.sh` must have executable permission.  
-If you are on Windows or the execute bit is unavailable, use:
+Open:
+
+- Upload UI: `http://<host>:8080/`
+- Admin console: `http://<host>:8080/admin.html`
+- WebDAV page: `http://<host>:8080/webdav.html`
+- Health check: `http://<host>:8080/api/health`
+
+On first start, if `CONFIG_ENCRYPTION_KEY` and `SESSION_SECRET` are not provided, the container generates persistent values in `/app/data/runtime.env`. Recreating the container keeps them as long as the `kvault_data` volume is kept.
+
+For public deployments, set admin credentials:
 
 ```bash
-node scripts/bootstrap-env.js
+docker rm -f kvault
+docker run -d \
+  --name kvault \
+  --restart unless-stopped \
+  -p 8080:8080 \
+  -v kvault_data:/app/data \
+  -e BASIC_USER=admin \
+  -e BASIC_PASS='replace-with-a-strong-password' \
+  ghcr.io/katelya77/k-vault:latest
 ```
 
-What this does:
-- if `.env` is missing, copy from `.env.example`
-- if `CONFIG_ENCRYPTION_KEY` / `SESSION_SECRET` are empty or placeholder values, generate secure random values
-- if those keys are already real values, keep them unchanged (prevents breaking decryption of existing storage configs)
+## Docker Compose
 
-2. Fill at least these values in `.env`:
-
-- `BASIC_USER` / `BASIC_PASS` (optional, set both to enable login)
-- one bootstrap storage config (for example Telegram: `TG_BOT_TOKEN` + `TG_CHAT_ID`)
-- optional settings store mode:
-  - default: `SETTINGS_STORE=sqlite`
-  - Redis mode: set `SETTINGS_STORE=redis` and `SETTINGS_REDIS_URL`
-
-3. Start services:
+If you cloned the repository:
 
 ```bash
-npm run docker:up
+docker compose up -d
 ```
 
-4. Open:
+`docker-compose.yml` pulls `ghcr.io/katelya77/k-vault:latest` by default and persists data in the `kvault_data` volume. `.env` is optional.
 
-- Legacy UI: `http://<host>:8080/`
-- WebDAV Page: `http://<host>:8080/webdav.html`
+Create `.env` only when you want fixed credentials, domain, default storage, or upload limits:
 
-Expected startup status:
+```bash
+cp .env.example .env
+docker compose up -d
+```
+
+Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d
+```
+
+Check status:
 
 ```bash
 docker compose ps
+docker compose logs -f k-vault
 ```
 
-You should see:
-- `kvault-api` -> `Up ... (healthy)`
-- `kvault-web` -> `Up ...`
-- `kvault-redis` -> `Up ... (healthy)` when started with `--profile redis`
+Expected: `kvault` is `Up ... (healthy)`.
 
-### Optional: start with local Redis settings store
+## Storage Backends
 
-If you prefer Redis for basic app settings (also compatible with Upstash/KVrocks protocol):
+Docker supports two configuration styles:
 
-1. Set in `.env`:
-   - `SETTINGS_STORE=redis`
-   - `SETTINGS_REDIS_URL=redis://redis:6379`
-2. Start compose with Redis profile:
+1. **Dynamic admin configuration**: start the container, open `/admin.html`, then add, test, and switch storage profiles.
+2. **Environment bootstrap configuration**: set default storage variables in `.env` or with `docker run -e`; the container writes them into SQLite on startup.
 
-```bash
-docker compose --profile redis up -d --build
-```
-
-## Login API (curl)
-
-`/api/auth/login` accepts both payload shapes:
-- new: `{ "username": "...", "password": "..." }`
-- compatible: `{ "user": "...", "pass": "..." }`
-
-Example:
-
-```bash
-curl -i -X POST "http://localhost:8080/api/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"your_password"}'
-```
-
-Compatibility example:
-
-```bash
-curl -i -X POST "http://localhost:8080/api/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"user":"admin","pass":"your_password"}'
-```
-
-## Architecture
-
-- `api`: Node.js Hono backend (`server/`)
-  - SQLite metadata (`storage_configs`, `files`, `sessions`, `chunk_uploads`)
-  - Settings store abstraction:
-    - `sqlite` (`app_settings` table)
-    - `redis` (Upstash / Redis / KVrocks compatible via Redis protocol)
-  - Encrypted storage secrets (`CONFIG_ENCRYPTION_KEY`)
-  - Multi-backend adapters: Telegram / R2 / S3 / Discord / HuggingFace / WebDAV / GitHub
-- `web`: Nginx static host + reverse proxy
-  - `/api/*` -> backend
-  - `/upload` -> backend
-  - `/file/*` -> backend
-  - `/` and other legacy pages -> static legacy HTML
-
-Persistent data is stored in Docker volume `kvault_data` (and `kvault_redis` when Redis profile is enabled).
-
-## Drive Console Update (2026-03)
-
-Admin pages now use root paths:
-
-- `http://<host>:8080/admin.html` (folder tree + file management)
-- `http://<host>:8080/webdav.html` (standalone WebDAV page)
-
-Direct-link compatibility:
-
-- Existing `/file/:id` links remain unchanged
-- Folder operations only modify metadata path, not file IDs
-
-## Cloudflare Pages Without Dashboard Build Settings
-
-Repository includes a lightweight note workflow:
-
-- `.github/workflows/pages-deploy.yml`
-
-Current recommended deployment for Pages is:
-
-1. Fork repository
-2. Connect fork in Cloudflare Dashboard (Git integration)
-3. Deploy directly from Cloudflare Pages
-
-No `CF_API_TOKEN` / `CF_ACCOUNT_ID` / `CF_PAGES_PROJECT` secrets are required in this repository by default.
-
-## Recommended Aggregation Pattern (alist/openlist)
-
-To reduce long-term adapter maintenance, recommended production pattern:
-
-1. K-Vault focuses on:
-   - Drive UX
-   - direct/share links
-   - auth/audit/metadata
-2. alist/openlist focuses on:
-   - multi-provider aggregation
-   - upstream mount/credential complexity
-3. K-Vault connects to alist/openlist through WebDAV adapter as a mounted backend.
-
-Suggested deployment:
-
-- Same VPS Docker host (simplest): deploy alist/openlist alongside K-Vault
-- Or independent node: expose WebDAV endpoint securely and connect from K-Vault WebDAV profile
-
-Failure isolation:
-
-- If aggregation layer is unavailable, only that WebDAV profile is unavailable
-- K-Vault site and other storage profiles continue to work
-- `/api/status` and Drive adapter cards show degraded state explicitly
-
-## Networking Notes
-
-- `ports` publishes container ports to host (`web` uses `${WEB_PORT:-8080}:80`)
-- `expose` is internal-only for compose services (`api:8787`, `redis:6379`)
-
-## Important Environment Variables
+Common variables:
 
 | Variable | Description |
 | :--- | :--- |
-| `CONFIG_ENCRYPTION_KEY` | Required. Encrypt/decrypt dynamic storage secrets in SQLite |
-| `SESSION_SECRET` | Session/signature secret |
-| `BASIC_USER` / `BASIC_PASS` | Admin login credentials (set both to enable auth) |
-| `UPLOAD_MAX_SIZE` | Global upload limit (bytes), default 100MB |
-| `UPLOAD_SMALL_FILE_THRESHOLD` | Switch threshold for direct/chunk upload |
-| `CHUNK_SIZE` | Chunk size in bytes |
-| `DEFAULT_STORAGE_TYPE` | Bootstrap storage type (`telegram`/`r2`/`s3`/`discord`/`huggingface`/`webdav`/`github`) |
-| `SETTINGS_STORE` | `sqlite` (default) or `redis` for basic app settings |
-| `SETTINGS_REDIS_URL` | Redis URL, for Upstash/Redis/KVrocks (required if `SETTINGS_STORE=redis`) |
-| `SETTINGS_REDIS_PREFIX` | Redis key prefix, default `k-vault` |
-| `SETTINGS_REDIS_CONNECT_TIMEOUT_MS` | Redis connect/ping timeout (ms), default `5000` |
-| `TG_BOT_TOKEN` + `TG_CHAT_ID` | Telegram bootstrap storage |
-| `R2_*` / `S3_*` / `DISCORD_*` / `HF_*` | Optional bootstrap configs for existing backends |
-| `WEBDAV_*` | WebDAV bootstrap config (`WEBDAV_BASE_URL`, auth, optional root path) |
-| `GITHUB_*` | GitHub bootstrap config (`repo`, `token`, `mode`, optional `release tag`/`prefix`) |
+| `BASIC_USER` / `BASIC_PASS` | Admin login credentials, recommended for public deployments |
+| `PUBLIC_BASE_URL` | External URL for direct links, share links, and webhooks |
+| `DEFAULT_STORAGE_TYPE` | Default storage: `telegram` / `r2` / `s3` / `discord` / `huggingface` / `webdav` / `github` |
+| `TG_BOT_TOKEN` + `TG_CHAT_ID` | Telegram |
+| `R2_ENDPOINT` / `R2_BUCKET` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | Cloudflare R2 |
+| `S3_ENDPOINT` / `S3_REGION` / `S3_BUCKET` / `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` | S3-compatible storage |
+| `WEBDAV_BASE_URL` / `WEBDAV_USERNAME` / `WEBDAV_PASSWORD` / `WEBDAV_BEARER_TOKEN` / `WEBDAV_ROOT_PATH` | WebDAV |
+| `GITHUB_REPO` / `GITHUB_TOKEN` / `GITHUB_MODE` / `GITHUB_PREFIX` | GitHub |
+| `HF_TOKEN` / `HF_REPO` | HuggingFace |
+| `UPLOAD_MAX_SIZE` / `UPLOAD_SMALL_FILE_THRESHOLD` / `CHUNK_SIZE` | Upload limits and chunk settings |
+| `WEB_PORT` | Public Compose port, default `8080` |
 
-## Security Notes
+After WebDAV, GitHub, HuggingFace, S3/R2, or another backend is configured, the upload page storage buttons, `/webdav.html`, admin console, and `/api/status` show the same state. API Token uploads use `/api/v1/upload`; browser uploads use `POST /upload`.
 
-- Never expose or commit tokens/secrets (`TG_BOT_TOKEN`, `DISCORD_BOT_TOKEN`, `HF_TOKEN`, `SESSION_SECRET`, `CONFIG_ENCRYPTION_KEY`, etc.)
-- If any token/secret may be leaked, rotate it immediately and restart related services
+## Cloudflare Pages Parity
 
-## Manage List API
+Docker and Cloudflare Pages use the same root static UI and main routes:
 
-`GET /api/manage/list` now defaults to the first page when query parameters are omitted.
+- `/`: upload UI
+- `/admin.html`: admin, storage profiles, API Token management
+- `/webdav.html`: WebDAV upload/test page
+- `/api/*`: admin, status, auth, storage tests, API v1
+- `POST /upload`: browser upload
+- `/api/v1/upload`: API Token upload
+- `/file/*`, `/share/*`, `/s/*`: direct links, share links, short links
 
-Supported query parameters:
-- `limit` (or `pageSize` / `size`): items per page, default `100`, max `1000`
-- `cursor` (or `offset`): next offset returned by previous response
-- `page` (or `current`): page number (1-based), used when `cursor` is not provided
-- `storage`: `all`/`telegram`/`r2`/`s3`/`discord`/`huggingface`/`webdav`/`github`
-- `search`: fuzzy match on file name and id
-- `listType` (or `list_type`): `all`/`None`/`White`/`Block`
-- `includeStats` (or `stats`): `1|true|yes` to include summary stats
+Runtime difference:
 
-## New Storage Notes
+- Cloudflare Pages uses Pages Functions and KV/R2 bindings.
+- Docker uses the containerized Node API, SQLite, and the `/app/data` volume.
 
-- WebDAV adapter supports `PUT`/`GET`/`DELETE` and auto `MKCOL`; connection test uses `OPTIONS` then `PROPFIND`.
-- GitHub adapter supports two modes:
-  - `releases`: preferred for binary files and larger payloads.
-  - `contents`: best for small files/text and has tighter API write/size/rate constraints.
+The UI, main workflows, multi-storage backends, WebDAV page, API Token upload, and share links should behave the same for users.
 
-## Regression Checklist
+## Optional Redis Settings Store
 
-Automated script:
+SQLite is the default. To store basic settings in Redis:
 
-```bash
-npm run regression:storage
+```dotenv
+SETTINGS_STORE=redis
+SETTINGS_REDIS_URL=redis://redis:6379
 ```
 
-Optional create/update smoke config:
+Start the Redis profile:
 
 ```bash
-BASE_URL=http://localhost:8080 \
-BASIC_USER=admin BASIC_PASS=your_password \
-SMOKE_STORAGE_TYPE=webdav \
-SMOKE_STORAGE_CONFIG_JSON='{"baseUrl":"https://dav.example.com","username":"u","password":"p"}' \
-node scripts/storage-regression.js
+docker compose --profile redis up -d
 ```
 
-The script covers:
-- `health` / `status`
-- `login` (both payloads)
-- `storage` list/create/update/test/default
-- `upload/download/delete` on enabled storages
+File metadata and dynamic storage profiles still stay in `/app/data/k-vault.db`.
 
-## Deployment Notes
+## Upgrade
 
-- Docker and Cloudflare Pages now use the same root-page UX flow.
-- Existing Cloudflare deployment flow remains unchanged.
-- In Docker mode, Cloudflare runtime quotas do not apply to the Node runtime itself.
-- Secrets must come from environment variables; do not hard-code.
-- New image workflow is available at `.github/workflows/docker-image.yml`:
-  - PR: build only
-  - main/tag push: build and push `k-vault-api` + `k-vault-web` images to GHCR
-- Default image names:
-  - `ghcr.io/<your-org-or-user>/k-vault-api`
-  - `ghcr.io/<your-org-or-user>/k-vault-web`
-- If your repository is private, make sure GitHub Packages visibility/permissions allow your target platform to pull images.
-
-## Platform Compatibility Notes
-
-### Vercel
-
-- Not recommended for current Docker runtime architecture.
-- Main blockers are runtime and persistence model mismatch.
-  - Serverless function request body limit (4.5MB) conflicts with K-Vault upload flow.
-  - Function file system is read-only except temporary `/tmp`, which does not fit persistent SQLite + chunk files.
-- If deploying to Vercel, only static frontend hosting is practical without major backend refactor.
-
-### Zeabur
-
-- Suitable.
-- Supports Dockerfile/image-based deployment (Compose file is not directly supported as-is).
-- Recommended: deploy both `api` and `web` services, mount persistent volume for `/app/data`.
-
-### ClawCloud
-
-- Suitable with container deployment flow.
-- Can migrate from Compose model to platform services.
-- Recommended: create separate services for backend and web (or adapt compose), and bind persistent storage for `/app/data`.
-
-### NAS (e.g. fnOS / Feiniu NAS)
-
-- Usually suitable when Docker/Compose is available.
-- Requirements: enable Docker/Compose, import `docker-compose.yml`, map persistent volume, and expose port 8080 (or custom `WEB_PORT`).
-
-## FAQ
-
-### `.env` missing
-
-Run:
+Docker Run:
 
 ```bash
-npm run docker:init-env
+docker pull ghcr.io/katelya77/k-vault:latest
+docker rm -f kvault
+docker run -d --name kvault --restart unless-stopped -p 8080:8080 -v kvault_data:/app/data ghcr.io/katelya77/k-vault:latest
 ```
 
-This recreates `.env` from `.env.example` and only auto-fills secret keys when needed.
-
-### `Failed to decrypt storage config "...". Check CONFIG_ENCRYPTION_KEY.`
-
-Cause: `CONFIG_ENCRYPTION_KEY` changed after encrypted configs were written to SQLite.
-
-Fix:
-- restore the original `CONFIG_ENCRYPTION_KEY`
-- if the original key is lost, delete/recreate affected storage configs in DB
-- avoid editing `CONFIG_ENCRYPTION_KEY` on running instances unless you are doing a planned migration
-
-### Docker Compose buildx/bake warning
-
-Some Docker versions print a bake-related hint/warning during `docker compose build`.
-
-Options:
-- ignore it (build still works)
-- enable bake explicitly: `set COMPOSE_BAKE=true` (PowerShell: `$env:COMPOSE_BAKE='true'`)
-- or disable it: `set COMPOSE_BAKE=false`
-- if you see `Docker Compose is configured to build using Bake, but buildx isn't installed`:
-  - Ubuntu install command: `sudo apt-get install docker-buildx`
-
-## Local Development
-
-- Backend:
+Docker Compose:
 
 ```bash
-npm --prefix server install
-npm --prefix server run dev
+docker compose pull
+docker compose up -d
 ```
 
-- Frontend:
+Do not delete the `kvault_data` volume unless you intentionally want to remove the database, upload records, dynamic storage profiles, and generated runtime secrets.
+
+## Build From Local Source
+
+For local validation:
 
 ```bash
-npm --prefix frontend install
-npm --prefix frontend run dev
+docker build -t k-vault:local .
 ```
 
-Docker runtime now serves root static pages directly, aligned with Cloudflare Pages behavior.
+Run Compose with the local image:
 
+```bash
+KVAULT_IMAGE=k-vault:local docker compose up -d
+```
+
+PowerShell:
+
+```powershell
+$env:KVAULT_IMAGE = "k-vault:local"
+docker compose up -d
+```
+
+## Troubleshooting
+
+Check the public entrypoint:
+
+```bash
+curl http://localhost:8080/api/health
+curl http://localhost:8080/
+```
+
+Container logs:
+
+```bash
+docker logs -f kvault
+```
+
+Compose logs:
+
+```bash
+docker compose logs -f k-vault
+```
+
+Inspect container env vars:
+
+```bash
+docker compose exec k-vault sh -lc "env | grep -E 'DEFAULT_STORAGE_TYPE|TG_|R2_|S3_|HF_|GITHUB_|WEBDAV_|BASIC_|PUBLIC_BASE_URL'"
+```
+
+Inspect storage profiles in SQLite:
+
+```bash
+docker compose exec k-vault sh -lc "cd /app/server && node -e \"const { createContainer }=require('./lib/container'); const c=createContainer(process.env); console.log(JSON.stringify(c.storageRepo.list(false), null, 2));\""
+```
+
+Run the storage doctor:
+
+```bash
+npm run docker:doctor
+```
+
+Only remove volumes when you intentionally want to delete all Docker data:
+
+```bash
+docker compose down -v
+```
